@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Clock, Link as LinkIcon, Plus, Trash2, Trophy,
-  Play, Pause, RotateCcw, Filter, Sparkles, BarChart3, Calendar,
-  ListChecks, Target, X
+  Play, Pause, RotateCcw, Filter, Calendar, ListChecks, Target, X
 } from "lucide-react";
 
-/* ---------------- Minimal UI components (inline) ---------------- */
+/* ---------------- Minimal UI (inline) ---------------- */
 const Card = ({ className = "", style, ...props }) => (
   <div className={`rounded-2xl border ${className}`} style={style} {...props} />
 );
@@ -29,18 +28,15 @@ const Textarea = ({ className = "", ...props }) => (
   <textarea className={`w-full border rounded-xl px-3 py-2 text-sm bg-transparent placeholder:text-slate-300/70 border-stroke text-slate-100 ${className}`} {...props} />
 );
 const Badge = ({ className = "", children, ...props }) => (
-  <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ui-chip ${className}`} {...props}>
+  <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full chip ${className}`} {...props}>
     {children}
   </span>
 );
-// neon progress
 const Progress = ({ value = 0, className = "", ...props }) => (
-  <div className={`ui-progress ${className}`} {...props}>
+  <div className={`bar ${className}`} {...props}>
     <span style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
   </div>
 );
-
-// Simple select (keeps your previous API)
 const Select = ({ value, onValueChange, className = "", children }) => {
   const items = [];
   const collect = (kids) => {
@@ -58,7 +54,7 @@ const Select = ({ value, onValueChange, className = "", children }) => {
       className={`border rounded-xl px-3 py-2 text-sm bg-transparent border-stroke text-slate-100 ${className}`}
     >
       {items.map((it, i) => (
-        <option key={i} value={it.props.value} className="bg-bg2 text-slate-100">
+        <option key={i} value={it.props.value} className="bg-bgDeep2 text-slate-100">
           {it.props.children}
         </option>
       ))}
@@ -71,12 +67,11 @@ const SelectContent = ({ children }) => <>{children}</>;
 const SelectItem = ({ value, children }) => <option value={value}>{children}</option>;
 SelectItem.displayName = "SelectItem";
 
-// Minimal dialog
 const Dialog = ({ open, onOpenChange, children }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => onOpenChange?.(false)}>
-      <div className="bg-bg2 rounded-2xl w-full max-w-lg border border-stroke" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-bgDeep2 rounded-2xl w-full max-w-lg border border-stroke" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -107,16 +102,49 @@ const forecastDaysLeft = (hoursDone, totalHours, startDate) => {
 const minsBetween = (a, b) => Math.max(0, Math.round((b - a) / 60000));
 const ymd = (ts) => new Date(ts).toISOString().slice(0,10);
 
-/* ---------------- Defaults ---------------- */
+/* ---------------- Quotes (daily rotates) ---------------- */
 const QUOTES = [
+  "Your future is created by what you do today.",
   "Small steps, big wins.",
-  "Progress over perfection.",
-  "You got this!",
-  "Focus: do one great thing now.",
-  "Be 1% better today.",
-  "Deep work = future you smiling.",
+  "Focus beats talent when talent doesn’t focus.",
+  "Be 1% better than yesterday.",
+  "Deep work today, freedom tomorrow.",
+  "Success is the sum of small efforts repeated daily.",
+  "Discipline is destiny."
 ];
+function DailyQuote() {
+  const dayIndex = Math.floor(Date.now() / 86400000) % QUOTES.length;
+  return <div className="text-base md:text-lg font-semibold">{QUOTES[dayIndex]}</div>;
+}
 
+/* ---------------- Calendar (weekly) ---------------- */
+function WeeklyCalendar({ sessions }) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const idx = today.getDay();
+  const start = new Date(today.getTime() - idx * 86400000);
+  const days = Array.from({length:7}).map((_,i)=>{
+    const d = new Date(start.getTime() + i*86400000);
+    const k = d.toISOString().slice(0,10);
+    return { k, d, label: d.getDate() };
+  });
+  const studied = new Set(sessions.map(s=> new Date(s.start).toISOString().slice(0,10)));
+
+  return (
+    <div className="grid grid-cols-7 gap-2">
+      {days.map(({k,label})=>{
+        const on = studied.has(k);
+        return (
+          <div key={k}
+            className={`h-12 rounded-xl grid place-items-center border ${on ? 'bg-candyPink/40 border-candyPink/60' : 'bg-glass border-stroke'} text-slate-100`}>
+            {label}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- Defaults ---------------- */
 const emptyTask = {
   id: "",
   title: "",
@@ -146,7 +174,7 @@ function Confetti({ trigger }) {
       x: Math.random() * 100,
       rot: (Math.random() * 2 - 1) * 30,
       delay: i * 0.01,
-      emoji: ["🎉", "✨", "🎯", "🏆", "📚"][i % 5],
+      emoji: ["🎉", "✨", "🎯", "🏆", "💖"][i % 5],
     }));
     setParticles(newPs);
     const t = setTimeout(() => setParticles([]), 1600);
@@ -183,11 +211,9 @@ function useInterval(callback, delay) {
   }, [delay]);
 }
 function Pomodoro({ onTickComplete }) {
-  const WORK = 25 * 60;
-  const BREAK = 5 * 60;
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(WORK);
+  const [secondsLeft, setSecondsLeft] = useState(25*60);
   const [count, setCount] = useState(0);
 
   useInterval(() => {
@@ -196,10 +222,10 @@ function Pomodoro({ onTickComplete }) {
         if (isBreak) {
           setIsBreak(false);
           setIsRunning(false);
-          setSecondsLeft(WORK);
+          setSecondsLeft(25*60);
         } else {
           setIsBreak(true);
-          setSecondsLeft(BREAK);
+          setSecondsLeft(5*60);
           setCount((c) => c + 1);
           onTickComplete && onTickComplete(); // +25m
         }
@@ -213,23 +239,38 @@ function Pomodoro({ onTickComplete }) {
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <Card className="ui-card shadow-2xl" style={{ "--card": "rgba(20,24,56,0.6)" }}>
-      <CardContent className="p-5 flex items-center gap-4">
-        <div className="flex-1">
-          <div className="text-xs uppercase tracking-widest text-slate-300/80 mb-1">Pomodoro Timer</div>
-          <div className="text-5xl md:text-6xl font-extrabold tabular-nums leading-none">{mm}:{ss}</div>
-          <div className="mt-1 text-xs text-slate-300/80">Mode: {isBreak ? "Break" : "Focus"} • Sessions: {count}</div>
+    <Card className="glass shadow-2xl" style={{ "--card": "rgba(255,128,181,0.10)" }}>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-slate-300/80 mb-1">Pomodoro</div>
+            <div className="text-5xl md:text-6xl font-extrabold tabular-nums leading-none">{mm}:{ss}</div>
+            <div className="mt-1 text-xs text-slate-300/80">Mode: {isBreak ? "Break" : "Focus"} • Sessions: {count}</div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsRunning((v) => !v)} size="icon" className="rounded-xl btn">
+              {isRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </Button>
+            <Button
+              onClick={() => { setIsRunning(false); setIsBreak(false); setSecondsLeft(25*60); }}
+              size="icon" className="rounded-xl btn"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsRunning((v) => !v)} size="icon" className="rounded-xl ui-btn">
-            {isRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-          </Button>
-          <Button
-            onClick={() => { setIsRunning(false); setIsBreak(false); setSecondsLeft(WORK); }}
-            size="icon" className="rounded-xl ui-btn"
-          >
-            <RotateCcw className="h-5 w-5" />
-          </Button>
+
+        {/* Presets + custom */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {[25,45,60].map(min => (
+            <Button key={min} className="btn" onClick={() => { setIsBreak(false); setSecondsLeft(min*60); }}>
+              {min} min
+            </Button>
+          ))}
+          <label className="text-xs text-slate-300/80 ml-1">Custom:
+            <input type="number" min="1" max="180" className="ml-2 w-16 bg-transparent border border-stroke rounded-md px-2 py-1 text-slate-100"
+                   onChange={(e)=>{ const m=parseInt(e.target.value||"0",10); if(m>0) { setIsBreak(false); setSecondsLeft(m*60); }}}/>
+          </label>
         </div>
       </CardContent>
     </Card>
@@ -248,38 +289,6 @@ function useLocalStorage(key, initial) {
   return [state, setState];
 }
 
-/* ---------------- Calendar Heatmap ---------------- */
-function CalendarHeatmap({ sessions, months = 2 }) {
-  const dayMap = new Map();
-  sessions.forEach(s => {
-    const dayKey = ymd(s.start);
-    const add = s.minutes ?? minsBetween(s.start, s.end);
-    dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + add);
-  });
-  const today = new Date(); today.setHours(0,0,0,0);
-  const days = [];
-  const totalDays = 30 * months + 7;
-  for (let i = totalDays - 1; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400000);
-    const key = d.toISOString().slice(0,10);
-    const min = dayMap.get(key) || 0;
-    let bg = "rgba(255,255,255,0.06)";
-    if (min >= 10) bg = "#384272";
-    if (min >= 30) bg = "#455096";
-    if (min >= 60) bg = "#5860d4";
-    if (min >= 120) bg = "#7b86ff";
-    days.push({ key, bg, min });
-  }
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-      {days.map(({ key, bg, min }) => (
-        <div key={key} title={`${key} • ${min} min`}
-          style={{ width: 14, height: 14, borderRadius: 4, background: bg, border: "1px solid rgba(255,255,255,0.10)" }} />
-      ))}
-    </div>
-  );
-}
-
 /* ---------------- Main App ---------------- */
 export default function App() {
   const [tasks, setTasks] = useLocalStorage(LS_KEY, []);
@@ -289,17 +298,12 @@ export default function App() {
   const [confettiKey, setConfettiKey] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState("");
+  const [profile, setProfile] = useLocalStorage("fp_profile", { name: "Friend" });
 
   const [draft, setDraft] = useState({
-    title: "",
-    url: "",
-    notes: "",
-    due: "",
-    tag: "General",
-    totalHours: 0,
+    title: "", url: "", notes: "", due: "", tag: "General", totalHours: 0,
   });
 
-  // Derived
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tasks.filter((t) => {
@@ -320,7 +324,6 @@ export default function App() {
     return { total, done, progAvg };
   }, [tasks]);
 
-  // Streaks & XP (once per day on a completion)
   useEffect(() => {
     const doneToday = tasks.some(
       (t) => t.status === "done" &&
@@ -332,8 +335,7 @@ export default function App() {
         xp: m.xp + 10,
         streak:
           m.lastDoneDay && new Date(m.lastDoneDay).toDateString() === new Date(Date.now() - 86400000).toDateString()
-            ? m.streak + 1
-            : 1,
+            ? m.streak + 1 : 1,
         lastDoneDay: todayKey,
       }));
     }
@@ -366,7 +368,6 @@ export default function App() {
     setConfettiKey((k) => k + 1);
   };
 
-  // Add minutes (manual or Pomodoro)
   const addTimeToTask = (id, minutes) => {
     setTasks((arr) =>
       arr.map((t) => {
@@ -390,7 +391,7 @@ export default function App() {
     if (activeTaskId) addTimeToTask(activeTaskId, 25);
   };
 
-  // Per-course live timer
+  // Live timer
   const startTimer = (id) => {
     setTasks(arr => arr.map(t => t.id === id
       ? (t.isTiming ? t : { ...t, isTiming: true, timerStart: Date.now() })
@@ -418,18 +419,21 @@ export default function App() {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen ui-shell font-sans text-slate-100">
+    <div className="min-h-screen shell font-sans">
       <Confetti trigger={confettiKey} />
 
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur bg-transparent">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-mint" />
-          <h1 className="text-2xl md:text-3xl font-extrabold ui-title">FocusPlay</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold">FocusPlay</h1>
           <div className="ml-auto flex items-center gap-2">
             <Badge className="hidden sm:flex gap-1 items-center"><Trophy className="h-4 w-4" /> {meta.xp} XP</Badge>
             <Badge className="hidden sm:flex">🔥 Streak: {meta.streak}</Badge>
-            <Button size="sm" className="ui-btn" onClick={() => setShowHelp(true)}>
+            <span className="chip">Hi, {profile.name} 👋</span>
+            <Button size="sm" className="btn" onClick={()=>{
+              const name = prompt("Your name", profile.name || "");
+              if(name!==null){ setProfile(p=>({...p, name: name.trim() || "Friend"})); }
+            }}>
               <ListChecks className="h-4 w-4 mr-1" />How it works
             </Button>
           </div>
@@ -439,17 +443,17 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-6 py-6 grid gap-6 lg:grid-cols-3">
         {/* Left: Add & Timer & Overview */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="ui-card shadow-xl">
+          <Card className="glass shadow-xl">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center gap-2 text-sm uppercase tracking-widest text-slate-300/80">
                 <Plus className="h-4 w-4" /> Add a course/task
               </div>
-              <Input placeholder="Title (e.g., 'Azure Synapse course')" value={draft.title}
+              <Input placeholder="Title" value={draft.title}
                      onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
               <div className="flex gap-2">
                 <Input placeholder="Link (paste URL)" value={draft.url}
                        onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))} />
-                <Button className="ui-btn" type="button"
+                <Button className="btn" type="button"
                         onClick={() => setDraft((d) => ({ ...d, title: d.title || domainFromUrl(d.url) }))}>
                   <LinkIcon className="h-4 w-4" />
                 </Button>
@@ -469,29 +473,30 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <Input
-                  type="number" min="0" step="0.5"
-                  placeholder="Total hours (e.g., 10)"
-                  value={draft.totalHours}
-                  onChange={(e) => setDraft((d) => ({ ...d, totalHours: parseFloat(e.target.value || 0) }))}
-                />
+                <Input type="number" min="0" step="0.5" placeholder="Total hours"
+                       value={draft.totalHours}
+                       onChange={(e) => setDraft((d) => ({ ...d, totalHours: parseFloat(e.target.value || 0) }))}/>
                 <div className="text-xs self-center text-slate-300/80">Set a goal (hours) for the course.</div>
               </div>
 
-              <Button className="w-full ui-btn ui-btn-primary" onClick={addTask}>
+              <Button className="w-full btn btn-primary" onClick={addTask}>
                 <Plus className="h-4 w-4 mr-1" />Add
               </Button>
-              <div className="text-xs text-slate-300/70">Tip: Title auto-fills from the link.</div>
+              <div className="text-xs text-slate-300/70">Tip: Title can auto-fill from link.</div>
             </CardContent>
           </Card>
 
           <Pomodoro onTickComplete={onPomodoroComplete} />
 
-          <Card className="ui-card shadow-xl">
+          <Card className="glass shadow-xl" style={{"--card":"rgba(34,211,238,0.12)"}}>
             <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3 text-slate-200">
-                <BarChart3 className="h-4 w-4" /> Overview
-              </div>
+              <div className="text-sm opacity-80 mb-1">Today</div>
+              <DailyQuote />
+            </CardContent>
+          </Card>
+
+          <Card className="glass shadow-xl">
+            <CardContent className="p-5">
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 rounded-2xl border border-stroke">
                   <div className="text-xs text-slate-300/80">Total</div>
@@ -513,7 +518,7 @@ export default function App() {
 
         {/* Right: List */}
         <div className="lg:col-span-2 space-y-4">
-          <Card className="ui-card shadow-xl">
+          <Card className="glass shadow-xl">
             <CardContent className="p-4 flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1">
@@ -535,15 +540,15 @@ export default function App() {
                 <AnimatePresence>
                   {filtered.map((t) => (
                     <motion.div key={t.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                      <Card className={`ui-card border-0 shadow-md ${t.status === "done" ? "ring-1 ring-emerald-300/30" : ""}`}>
+                      <Card className={`glass border-0 shadow-md ${t.status === "done" ? "ring-1 ring-candyAqua/40" : ""}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
                             <Button
                               size="icon"
-                              className={`rounded-xl ${t.status === "done" ? "ui-btn" : "ui-btn"}`}
+                              className="rounded-xl btn"
                               onClick={() => (t.status === "done" ? updateTask(t.id, { status: "todo", progress: 0 }) : markDone(t.id))}
                             >
-                              <CheckCircle2 className={`h-5 w-5 ${t.status === "done" ? "text-emerald-400" : ""}`} />
+                              <CheckCircle2 className={`h-5 w-5 ${t.status === "done" ? "text-candyAqua" : ""}`} />
                             </Button>
 
                             <div className="flex-1 min-w-0">
@@ -582,7 +587,7 @@ export default function App() {
                                       };
                                     }));
                                   }}
-                                  className="w-48 accent-mint"
+                                  className="w-48 accent-candyPink"
                                 />
                                 <div className="text-xs w-10 tabular-nums text-center">{t.progress}%</div>
                                 <Progress className="flex-1" value={t.progress} />
@@ -598,13 +603,11 @@ export default function App() {
                                 })()}
                               </div>
 
-                              {/* Days studied + mini calendar */}
+                              {/* Weekly calendar */}
                               {t.sessions.length > 0 && (
                                 <div className="mt-3">
-                                  <div className="text-xs text-slate-300 mb-1">
-                                    Days studied: <b>{new Set(t.sessions.map(s => ymd(s.start))).size}</b>
-                                  </div>
-                                  <CalendarHeatmap sessions={t.sessions} months={2} />
+                                  <div className="text-xs text-slate-300 mb-1">This week</div>
+                                  <WeeklyCalendar sessions={t.sessions} />
                                 </div>
                               )}
                             </div>
@@ -613,21 +616,21 @@ export default function App() {
                             <div className="flex flex-col gap-2 items-end">
                               <div className="flex flex-wrap items-center gap-2">
                                 {!t.isTiming && (
-                                  <Button size="sm" className="ui-btn" onClick={() => startTimer(t.id)}>Start</Button>
+                                  <Button size="sm" className="btn" onClick={() => startTimer(t.id)}>Start</Button>
                                 )}
                                 {t.isTiming && (
                                   <>
-                                    <Button size="sm" className="ui-btn" onClick={() => pauseTimer(t.id)}>Pause</Button>
-                                    <Button size="sm" className="ui-btn" onClick={() => endTimer(t.id)}>End</Button>
+                                    <Button size="sm" className="btn" onClick={() => pauseTimer(t.id)}>Pause</Button>
+                                    <Button size="sm" className="btn" onClick={() => endTimer(t.id)}>End</Button>
                                   </>
                                 )}
-                                <Button size="sm" className={`ui-btn ${activeTaskId===t.id ? "ring-2 ring-mint/60" : ""}`}
+                                <Button size="sm" className={`btn ${activeTaskId===t.id ? "ring-2 ring-candyAqua/60" : ""}`}
                                   onClick={() => setActiveTaskId(prev => prev === t.id ? "" : t.id)}>
                                   {activeTaskId === t.id ? "Focusing…" : "Focus with Timer"}
                                 </Button>
-                                <Button size="sm" className="ui-btn" onClick={() => addTimeToTask(t.id, 15)}>+15m</Button>
-                                <Button size="sm" className="ui-btn" onClick={() => addTimeToTask(t.id, 60)}>+1h</Button>
-                                <Button size="icon" className="ui-btn" onClick={() => removeTask(t.id)}><Trash2 className="h-4 w-4" /></Button>
+                                <Button size="sm" className="btn" onClick={() => addTimeToTask(t.id, 15)}>+15m</Button>
+                                <Button size="sm" className="btn" onClick={() => addTimeToTask(t.id, 60)}>+1h</Button>
+                                <Button size="icon" className="btn" onClick={() => removeTask(t.id)}><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </div>
                           </div>
@@ -646,22 +649,6 @@ export default function App() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Motivation */}
-          <Card className="ui-card shadow-xl">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-6 w-6 text-amber" />
-                <div>
-                  <div className="text-sm text-slate-300">Daily Motivation</div>
-                  <div className="font-semibold">{QUOTES[Math.floor((Date.now() / 86400000) % QUOTES.length)]}</div>
-                </div>
-              </div>
-              <div className="text-sm text-slate-300">
-                XP: <span className="font-semibold">{meta.xp}</span> • Streak: <span className="font-semibold">{meta.streak}</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
 
@@ -669,23 +656,21 @@ export default function App() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>How to use FocusPlay</DialogTitle>
-            <DialogDescription>Track course links, study time, percentage, ETA, and days you've studied.</DialogDescription>
+            <DialogDescription>Track links, time, %, ETA, and your study days.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-slate-200">
             <div className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5" /><p>Add a course with title, link, and goal hours.</p></div>
             <div className="flex items-start gap-2"><ListChecks className="h-4 w-4 mt-0.5" /><p>Use Start/Pause/End to log sessions automatically. Or +15m/+1h for manual time.</p></div>
             <div className="flex items-start gap-2"><Clock className="h-4 w-4 mt-0.5" /><p>Pomodoro adds 25 minutes to the selected course and gives XP.</p></div>
-            <div className="flex items-start gap-2"><BarChart3 className="h-4 w-4 mt-0.5" /><p>Overview shows total items, completed count, and average progress.</p></div>
-            <div className="flex items-start gap-2"><Sparkles className="h-4 w-4 mt-0.5" /><p>Your data is saved in your browser (localStorage). No login needed.</p></div>
           </div>
           <DialogFooter>
-            <Button className="ui-btn" onClick={() => setShowHelp(false)}><X className="h-4 w-4 mr-1" />Got it</Button>
+            <Button className="btn" onClick={() => setShowHelp(false)}><X className="h-4 w-4 mr-1" />Got it</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <footer className="max-w-6xl mx-auto px-6 py-10 text-center text-xs text-slate-400">
-        Built with ❤️ — stay curious & keep shipping.
+         Built with ❤️ — keep going!
       </footer>
     </div>
   );

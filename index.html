@@ -1,88 +1,76 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FocusPlay – Study & Course Tracker</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusPlay – Candy Pop</title>
 
-  <!-- Font -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
-          colors: {
-            bg1: '#0b1020',
-            bg2: '#121735',
-            card: 'rgba(255,255,255,0.06)',
-            stroke: 'rgba(255,255,255,0.10)',
-            soft: '#9aa4ff',
-            mint: '#33e6c9',
-            amber: '#f7b500',
-            sky: '#3ec6ff',
-            grape: '#8b5cf6'
+    <!-- Tailwind (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] },
+            colors: {
+              // 🍬 Candy Pop palette
+              candyPink: '#ff80b5',
+              candyViolet: '#a855f7',
+              candyAqua: '#22d3ee',
+              bgDeep1: '#111827',  // near-black indigo
+              bgDeep2: '#3b0764',  // deep violet
+              glass: 'rgba(255,255,255,0.10)',
+              stroke: 'rgba(255,255,255,0.18)'
+            }
           }
         }
       }
-    }
-  </script>
+    </script>
 
-  <!-- Dashboard skin (plain CSS; no build step) -->
-  <style>
-    *{box-sizing:border-box}
-    html,body,#root{height:100%}
-    body{margin:0;font-family:Inter,ui-sans-serif,system-ui}
+    <!-- Candy Pop skin -->
+    <style>
+      html,body,#root{height:100%} body{margin:0;font-family:Inter,ui-sans-serif,system-ui}
 
-    /* Dark shell + confetti bg specks */
-    .ui-shell{
-      background: radial-gradient(1200px 400px at -10% -10%, #1b2250 0%, transparent 40%),
-                  radial-gradient(1000px 500px at 110% 10%, #1c244a 0%, transparent 42%),
-                  linear-gradient(180deg, #0b1020 0%, #121735 100%);
-      color: #eaf0ff;
-    }
-
-    /* Cards */
-    .ui-card{
-      background: var(--card, rgba(255,255,255,0.06));
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 1rem;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
-      backdrop-filter: blur(6px);
-    }
-
-    /* Big heading */
-    .ui-title{letter-spacing:.2px}
-
-    /* Buttons */
-    .ui-btn{
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      color: #eaf0ff;
-    }
-    .ui-btn:hover{background: rgba(255,255,255,0.12)}
-    .ui-btn-primary{
-      background: linear-gradient(90deg, #33e6c9, #3ec6ff);
-      color:#051220; border:0;
-    }
-    .ui-chip{
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.15);
-      color:#cfe3ff; border-radius:999px; padding:4px 10px; font-size:12px
-    }
-
-    /* Progress bars */
-    .ui-progress{height:8px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden}
-    .ui-progress > span{display:block;height:100%;background:linear-gradient(90deg,#33e6c9,#8b5cf6)}
-  </style>
-</head>
-
+      /* bright, candy glass dashboard */
+      .shell{
+        background:
+          radial-gradient(1200px 400px at -10% -10%, #ff80b522 0%, transparent 40%),
+          radial-gradient(1000px 500px at 110% 10%, #a855f722 0%, transparent 42%),
+          linear-gradient(180deg, #111827 0%, #3b0764 100%);
+        color:#f1f5ff;
+      }
+      .glass{
+        background: var(--card, rgba(255,255,255,0.10));
+        border:1px solid rgba(255,255,255,0.18);
+        border-radius:16px;
+        box-shadow: 0 14px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(10px);
+      }
+      .chip{
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius:999px; padding:6px 10px; font-size:12px; color:#e8ecff;
+      }
+      .btn{
+        background:rgba(255,255,255,0.12);
+        border:1px solid rgba(255,255,255,0.22);
+        border-radius:12px; color:#eef2ff;
+        transition:transform .12s ease, background .12s ease;
+      }
+      .btn:hover{ background:rgba(255,255,255,0.20); transform:translateY(-1px) }
+      .btn-primary{
+        background: linear-gradient(90deg, #ff80b5, #a855f7);
+        border:0; color:#0b1220; font-weight:700;
+      }
+      .bar{ height:8px; border-radius:999px; background:rgba(255,255,255,0.18); overflow:hidden }
+      .bar>span{ display:block; height:100%;
+        background:linear-gradient(90deg, #22d3ee, #ff80b5 60%, #a855f7) }
+    </style>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
