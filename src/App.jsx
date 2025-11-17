@@ -21,7 +21,6 @@ import {
   DialogDescription, DialogFooter
 } from "@/components/ui/dialog.jsx";
 
-
 // --------- Helpers ---------
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
